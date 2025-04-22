@@ -1,0 +1,9 @@
+FastAPI
+uvicorn
+httpx
+pydantic
+openai
+requests
+google-generativeai
+anthropic
+# Add any additional dependencies for Gemini and Claude as needed
