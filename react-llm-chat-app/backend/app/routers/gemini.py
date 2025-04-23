@@ -11,7 +11,7 @@ router = APIRouter()
 
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-generation_config={"max_output_tokens": 100}
+generation_config = {"max_output_tokens": 100}
 
 # Schema for chat histories
 # {
@@ -28,6 +28,7 @@ generation_config={"max_output_tokens": 100}
 # File to persist chat histories
 CHAT_HISTORY_FILE = "chat_histories.json"
 
+
 # Load chat histories from file
 def load_chat_histories():
     if os.path.exists(CHAT_HISTORY_FILE):
@@ -35,13 +36,16 @@ def load_chat_histories():
             return json.load(file)
     return {}
 
+
 # Save chat histories to file
 def save_chat_histories(chat_histories):
     with open(CHAT_HISTORY_FILE, "w") as file:
         json.dump(chat_histories, file, indent=4)
 
+
 # Initialize chat histories
 chat_histories = load_chat_histories()
+
 
 class GeminiRequest(BaseModel):
     prompt: str
@@ -49,8 +53,10 @@ class GeminiRequest(BaseModel):
     conversation_id: str
     max_tokens: int = 100
 
+
 class GeminiResponse(BaseModel):
     response: str
+
 
 @router.post("/gemini", response_model=GeminiResponse)
 async def chat_with_gemini(request: GeminiRequest):
@@ -66,23 +72,30 @@ async def chat_with_gemini(request: GeminiRequest):
             chat_histories[user_id][conversation_id] = []
 
         # Append the current prompt to the conversation's chat history
-        chat_histories[user_id][conversation_id].append({"role": "user", "content": request.prompt})
-        print(chat_histories)
+        chat_histories[user_id][conversation_id].append(
+            {"role": "user", "content": request.prompt}
+        )
 
         # Generate response considering the chat history
         response = client.models.generate_content(
             model="gemini-2.0-flash",
-            contents=[message["content"] for message in chat_histories[user_id][conversation_id]],
+            contents=[
+                message["content"]
+                for message in chat_histories[user_id][conversation_id]
+            ],
         )
 
         # Append the response to the chat history
         if response.text:
-            chat_histories[user_id][conversation_id].append({"role": "assistant", "content": response.text})
+            chat_histories[user_id][conversation_id].append(
+                {"role": "assistant", "content": response.text}
+            )
             save_chat_histories(chat_histories)
             return GeminiResponse(response=response.text)
         return GeminiResponse(response="No response from Gemini")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/history/{username}", response_model=dict)
 async def get_chat_history(username: str):
@@ -91,6 +104,8 @@ async def get_chat_history(username: str):
         if username in chat_histories:
             return chat_histories[username]
         else:
-            raise HTTPException(status_code=404, detail="No chat history found for this user")
+            raise HTTPException(
+                status_code=404, detail="No chat history found for this user"
+            )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

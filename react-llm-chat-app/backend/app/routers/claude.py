@@ -12,12 +12,15 @@ client = Anthropic(
 
 router = APIRouter()
 
+
 class ClaudeRequest(BaseModel):
     prompt: str
     max_tokens: int = 100
 
+
 class ClaudeResponse(BaseModel):
     response: str
+
 
 @router.post("/claude", response_model=ClaudeResponse)
 async def chat_with_claude(request: ClaudeRequest):
@@ -25,9 +28,7 @@ async def chat_with_claude(request: ClaudeRequest):
         response = client.messages.create(
             model="claude-3-7-sonnet-20250219",
             max_tokens=request.max_tokens,
-            messages=[
-                {"role": "user", "content": request.prompt}
-            ]
+            messages=[{"role": "user", "content": request.prompt}],
         )
         if response.content:
             return ClaudeResponse(response=response.content)

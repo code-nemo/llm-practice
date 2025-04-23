@@ -53,7 +53,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ availableLLMs, loggedInUs
         if (!input.trim() || !selectedConversationId) return;
 
         try {
-            const response = await fetch(`http://localhost:8000/gemini`, {
+            const response = await fetch(`http://localhost:8000/${selectedLLM.toLowerCase()}/${selectedLLM.toLowerCase()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
