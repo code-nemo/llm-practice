@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from google import genai
 from dotenv import load_dotenv
 import os
+import json
 
 load_dotenv()
 
@@ -23,7 +24,24 @@ generation_config={"max_output_tokens": 100}
 #         "conversation2_id": [...<conversation2_history>]
 #     }
 # }
-chat_histories = {}
+
+# File to persist chat histories
+CHAT_HISTORY_FILE = "chat_histories.json"
+
+# Load chat histories from file
+def load_chat_histories():
+    if os.path.exists(CHAT_HISTORY_FILE):
+        with open(CHAT_HISTORY_FILE, "r") as file:
+            return json.load(file)
+    return {}
+
+# Save chat histories to file
+def save_chat_histories(chat_histories):
+    with open(CHAT_HISTORY_FILE, "w") as file:
+        json.dump(chat_histories, file, indent=4)
+
+# Initialize chat histories
+chat_histories = load_chat_histories()
 
 class GeminiRequest(BaseModel):
     prompt: str
@@ -51,13 +69,6 @@ async def chat_with_gemini(request: GeminiRequest):
         chat_histories[user_id][conversation_id].append({"role": "user", "content": request.prompt})
         print(chat_histories)
 
-        # chat_histories = getattr(router, "chat_histories", {})
-        # if user_id not in chat_histories:
-        #     chat_histories[user_id] = []
-
-        # Append the current prompt to the user's chat history
-        # chat_histories[user_id].append({"role": "user", "content": request.prompt})
-        # print(chat_histories)
         # Generate response considering the chat history
         response = client.models.generate_content(
             model="gemini-2.0-flash",
@@ -67,8 +78,19 @@ async def chat_with_gemini(request: GeminiRequest):
         # Append the response to the chat history
         if response.text:
             chat_histories[user_id][conversation_id].append({"role": "assistant", "content": response.text})
-            # setattr(router, "chat_histories", chat_histories)  # Save updated chat history
+            save_chat_histories(chat_histories)
             return GeminiResponse(response=response.text)
         return GeminiResponse(response="No response from Gemini")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/gemini/history/{username}", response_model=dict)
+async def get_chat_history(username: str):
+    try:
+        # Retrieve chat history for the specified user
+        if username in chat_histories:
+            return chat_histories[username]
+        else:
+            raise HTTPException(status_code=404, detail="No chat history found for this user")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
