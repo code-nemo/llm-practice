@@ -84,7 +84,7 @@ async def chat_with_gemini(request: GeminiRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/gemini/history/{username}", response_model=dict)
+@router.get("/history/{username}", response_model=dict)
 async def get_chat_history(username: str):
     try:
         # Retrieve chat history for the specified user
