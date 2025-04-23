@@ -1,37 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Signup from './components/Signup';
 import Login from './components/Login';
 import ChatInterface from './components/ChatInterface';
-import LLMSelector from './components/LLMSelector';
 
 const App: React.FC = () => {
-    const [selectedLLM, setSelectedLLM] = useState<string>('OpenAI');
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-    const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+        // Retrieve authentication state from localStorage
+        return localStorage.getItem('isAuthenticated') === 'true';
+    });
+    const [loggedInUser, setLoggedInUser] = useState<string | null>(() => {
+        // Retrieve logged-in user from localStorage
+        return localStorage.getItem('loggedInUser');
+    });
 
-    const handleLLMChange = (llm: string) => {
-        setSelectedLLM(llm);
-    };
+    useEffect(() => {
+        // Ensure `loggedInUser` is always synced with `localStorage`
+        const storedUser = localStorage.getItem('loggedInUser');
+        if (storedUser) {
+            setLoggedInUser(storedUser);
+        }
+    }, []);
 
     const handleLogin = (username: string) => {
         setIsAuthenticated(true);
-        setLoggedInUser(username); // Set the logged-in user's username
+        setLoggedInUser(username);
+
+        // Persist authentication state and user data in localStorage
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('loggedInUser', username);
     };
 
     const handleLogout = (navigate: (path: string) => void) => {
         setIsAuthenticated(false);
-        setLoggedInUser(null); // Clear the logged-in user's details
+        setLoggedInUser(null);
+
+        // Clear authentication state and user data from localStorage
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('loggedInUser');
+
         navigate('/'); // Navigate to the login screen
     };
+
+    const availableLLMs = ['OpenAI', 'Claude', 'Gemini']; // List of available LLMs
 
     return (
         <Router>
             <div>
-                <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', backgroundColor: '#f5f5f5' }}>
-                    <h1>Chat with LLMs</h1>
-                    {isAuthenticated && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <header style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem', backgroundColor: '#f5f5f5' }}>
+                    <h1 style={{ textAlign: 'center', margin: 0 }}>AnyLLM</h1>
+                    {isAuthenticated && loggedInUser && (
+                        <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                             <span>Welcome, {loggedInUser}</span>
                             <LogoutButton onLogout={handleLogout} />
                         </div>
@@ -48,12 +67,7 @@ const App: React.FC = () => {
                             <>
                                 <Route
                                     path="/chat"
-                                    element={
-                                        <>
-                                            <LLMSelector onLLMChange={handleLLMChange} />
-                                            <ChatInterface selectedLLM={selectedLLM} />
-                                        </>
-                                    }
+                                    element={<ChatInterface availableLLMs={availableLLMs} loggedInUser={loggedInUser || ''} />}
                                 />
                                 <Route path="*" element={<Navigate to="/chat" />} />
                             </>

@@ -14,6 +14,7 @@ generation_config={"max_output_tokens": 100}
 
 class GeminiRequest(BaseModel):
     prompt: str
+    username: str
     max_tokens: int = 100
 
 class GeminiResponse(BaseModel):
@@ -23,7 +24,7 @@ class GeminiResponse(BaseModel):
 async def chat_with_gemini(request: GeminiRequest):
     try:
         # Maintain a chat history for each user
-        user_id = "default_user"  # Replace with actual user identification logic
+        user_id = request.username
         chat_histories = getattr(router, "chat_histories", {})
         if user_id not in chat_histories:
             chat_histories[user_id] = []
