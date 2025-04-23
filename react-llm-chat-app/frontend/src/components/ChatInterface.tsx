@@ -71,11 +71,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ availableLLMs, loggedInUs
                     <button type="submit" style={styles.button}>Send</button>
                 </form>
                 <div style={styles.messages}>
-                    {messages.slice().reverse().map((msg, index) => ( // Reverse the messages array
-                        <div key={index} style={styles.message}>
-                            {msg}
-                        </div>
-                    ))}
+                    {messages
+                        .filter((msg) => {
+                            // Extract the username from the message string
+                            const usernameMatch = msg.match(/\(.*?\)/); // Matches the username in parentheses
+                            const username = usernameMatch ? usernameMatch[0].replace(/[()]/g, '') : null;
+                            return username === loggedInUser || msg.startsWith("Gemini:"); // Include user and LLM messages
+                        })
+                        .reduce((pairs, msg, index, filteredMessages) => {
+                            // Group user message with the next LLM response
+                            if (msg.startsWith(`You (${loggedInUser})`)) {
+                                const llmResponse = filteredMessages[index + 1]?.startsWith("Gemini:") ? filteredMessages[index + 1] : null;
+                                pairs.push({ userMessage: msg, llmResponse });
+                            }
+                            return pairs;
+                        }, [] as { userMessage: string; llmResponse: string | null }[])
+                        .map((pair, index) => (
+                            <div key={index} style={styles.messagePair}>
+                                <div style={styles.userMessage}>{pair.userMessage}</div>
+                                {pair.llmResponse && <div style={styles.llmMessage}>{pair.llmResponse}</div>}
+                            </div>
+                        ))}
                 </div>
             </div>
         </div>
@@ -155,6 +171,26 @@ const styles = {
         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
         fontSize: '1rem',
         color: '#333',
+    },
+    messagePair: {
+        marginBottom: '1rem',
+    },
+    userMessage: {
+        padding: '0.8rem',
+        backgroundColor: '#e0f7fa',
+        borderRadius: '8px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        fontSize: '1rem',
+        color: '#333',
+    },
+    llmMessage: {
+        padding: '0.8rem',
+        backgroundColor: '#f9f9f9',
+        borderRadius: '8px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        fontSize: '1rem',
+        color: '#333',
+        marginTop: '0.5rem',
     },
 };
 
