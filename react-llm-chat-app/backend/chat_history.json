@@ -36,6 +36,40 @@
             {
                 "role": "assistant",
                 "content": "Ah, I understand now! I am so sorry for the misunderstanding.\n\nYour name is Pundlik. You told me \"I am Pundlik\" at the beginning of our conversation.\n"
+            },
+            {
+                "role": "user",
+                "content": "hello"
+            },
+            {
+                "role": "assistant",
+                "content": "Hello Pundlik! How can I help you today?\n"
+            },
+            {
+                "role": "user",
+                "content": "Hi"
+            },
+            {
+                "role": "user",
+                "content": "Hi"
+            },
+            {
+                "role": "user",
+                "content": "hey"
+            },
+            {
+                "role": "assistant",
+                "content": "Hi Pundlik! How's it going? Is there anything I can do for you?\n"
+            }
+        ],
+        "1745483714203": [
+            {
+                "role": "user",
+                "content": "Who am I?"
+            },
+            {
+                "role": "assistant",
+                "content": "To figure out who you are, I need some clues! Tell me about yourself. For example:\n\n*   **Are you a person, a place, or a thing?**\n*   **Are you real or fictional?**\n*   **What are some of your characteristics, actions, or relationships?**\n\nThe more information you give me, the better chance I have of guessing correctly."
             }
         ]
     }

@@ -24,7 +24,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ availableLLMs, loggedInUs
         const fetchConversations = async () => {
             try {
                 setIsLoading(true);
-                const response = await fetch(`http://localhost:8000/gemini/history/${loggedInUser}`);
+                const response = await fetch(`http://localhost:8000/chat_history/${loggedInUser}`);
                 if (response.ok) {
                     const data = await response.json();
                     const fetchedConversations = Object.entries(data).map(([id, messages]: [string, any]) => ({
@@ -53,7 +53,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ availableLLMs, loggedInUs
         if (!input.trim() || !selectedConversationId) return;
 
         try {
-            const response = await fetch(`http://localhost:8000/${selectedLLM.toLowerCase()}/${selectedLLM.toLowerCase()}`, {
+            const response = await fetch(`http://localhost:8000/${selectedLLM.toLowerCase()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

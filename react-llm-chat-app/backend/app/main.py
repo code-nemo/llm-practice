@@ -2,9 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import openai, gemini, claude
 from app.models.user import SignupUser, LoginUser
-import json
-from pathlib import Path
-
+from app.storage_utils.users import read_users, write_users
+from app.storage_utils.chat_history import chat_history
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -27,25 +26,6 @@ app.include_router(claude.router, prefix="/claude", tags=["Claude"])
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the LLM Chat API"}
-
-
-# Path to the JSON file for storing user credentials
-USERS_FILE = Path("users.json")
-
-# Ensure the JSON file exists
-if not USERS_FILE.exists():
-    USERS_FILE.write_text("[]")
-
-
-# Helper functions to read and write users
-def read_users():
-    with open(USERS_FILE, "r") as file:
-        return json.load(file)
-
-
-def write_users(users):
-    with open(USERS_FILE, "w") as file:
-        json.dump(users, file, indent=4)
 
 
 @app.post("/signup")
@@ -75,3 +55,17 @@ async def login(user: LoginUser):
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     return {"message": "Login successful", "username": user.username}
+
+
+@app.get("/chat_history/{username}", response_model=dict)
+async def get_chat_history(username: str):
+    try:
+        # Retrieve chat history for the specified user
+        if username in chat_history:
+            return chat_history[username]
+        else:
+            raise HTTPException(
+                status_code=404, detail="No chat history found for this user"
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
