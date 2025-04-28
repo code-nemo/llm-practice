@@ -1,19 +1,22 @@
 from fastapi import APIRouter, HTTPException
 from app.models.llm import BaseLLMRequest, BaseLLMResponse
-from dotenv import load_dotenv
 from anthropic import Anthropic
+from pymongo import MongoClient
 import os
-from app.storage_utils.chat_history import (
-    chat_history,
-    save_chat_history,
-)  # Import shared utilities
+from dotenv import load_dotenv
 
 load_dotenv()
+
+router = APIRouter()
 
 # Initialize Anthropic client
 client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
-router = APIRouter()
+# MongoDB connection
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+mongo_client = MongoClient(MONGO_URI)
+db = mongo_client["react_chat_app"]  # Database name
+chat_collection = db["chat_history"]  # Collection name
 
 
 class ClaudeRequest(BaseLLMRequest):
@@ -37,25 +40,29 @@ class ClaudeResponse(BaseLLMResponse):
 @router.post("/", response_model=ClaudeResponse)
 async def chat_with_claude(request: ClaudeRequest):
     try:
-        # Maintain a chat history for each user
+        # Retrieve or initialize chat history for the user and conversation
         user_id = request.username
         conversation_id = request.conversation_id
 
-        # Initialize user and conversation if not present
-        if user_id not in chat_history:
-            chat_history[user_id] = {}
-        if conversation_id not in chat_history[user_id]:
-            chat_history[user_id][conversation_id] = []
+        # Find the user's chat history in MongoDB
+        user_chat = chat_collection.find_one({"username": user_id})
+
+        if not user_chat:
+            # Initialize chat history if the user does not exist
+            chat_collection.insert_one(
+                {"username": user_id, "conversations": {conversation_id: []}}
+            )
+            chat_history = []
+        else:
+            # Retrieve the conversation history if it exists
+            chat_history = user_chat["conversations"].get(conversation_id, [])
 
         # Append the current prompt to the conversation's chat history
-        chat_history[user_id][conversation_id].append(
-            {"role": "user", "content": request.prompt}
-        )
+        chat_history.append({"role": "user", "content": request.prompt})
 
         # Concatenate the chat history into a single prompt string
         prompt = "\n".join(
-            f"{message['role']}: {message['content']}"
-            for message in chat_history[user_id][conversation_id]
+            f"{message['role']}: {message['content']}" for message in chat_history
         )
 
         # Generate response using the Anthropic API
@@ -68,11 +75,16 @@ async def chat_with_claude(request: ClaudeRequest):
         # Append the response to the chat history
         if response.completion:
             assistant_message = response.completion
-            chat_history[user_id][conversation_id].append(
-                {"role": "assistant", "content": assistant_message}
+            chat_history.append({"role": "assistant", "content": assistant_message})
+
+            # Update the conversation in MongoDB
+            chat_collection.update_one(
+                {"username": user_id},
+                {"$set": {f"conversations.{conversation_id}": chat_history}},
             )
-            save_chat_history(chat_history)
+
             return ClaudeResponse(response=assistant_message)
+
         return ClaudeResponse(response="No response from Claude")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

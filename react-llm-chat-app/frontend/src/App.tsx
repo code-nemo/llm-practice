@@ -42,7 +42,7 @@ const App: React.FC = () => {
         navigate('/'); // Navigate to the login screen
     };
 
-    const availableLLMs = ['OpenAI', 'Claude', 'Gemini']; // List of available LLMs
+    const availableLLMs = ['Gemini', 'OpenAI', 'Claude',]; // List of available LLMs
 
     return (
         <Router>
