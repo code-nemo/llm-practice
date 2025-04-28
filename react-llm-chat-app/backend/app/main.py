@@ -16,7 +16,7 @@ app = FastAPI()
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 client = MongoClient(MONGO_URI)
 db = client["react_chat_app"]  # Database name
-chat_collection = db["chat_histories"]  # Collection name
+chat_collection = db["chat_history"]  # Collection name
 
 app.add_middleware(
     CORSMiddleware,
@@ -82,9 +82,7 @@ async def get_chat_history(username: str):
         if user_chat:
             return user_chat["conversations"]
         else:
-            raise HTTPException(
-                status_code=404, detail="No chat history found for this user"
-            )
+            return {}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
