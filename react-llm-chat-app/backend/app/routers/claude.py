@@ -66,15 +66,15 @@ async def chat_with_claude(request: ClaudeRequest):
         )
 
         # Generate response using the Anthropic API
-        response = client.completions.create(
-            model="claude-3",
-            max_tokens_to_sample=request.max_tokens,
+        response = client.messages.create(
+            model="claude-3-7-sonnet-20250219",
+            max_tokens=request.max_tokens,
             prompt=prompt,  # Pass the concatenated prompt
         )
 
         # Append the response to the chat history
-        if response.completion:
-            assistant_message = response.completion
+        if response.content:
+            assistant_message = response.content
             chat_history.append({"role": "assistant", "content": assistant_message})
 
             # Update the conversation in MongoDB
